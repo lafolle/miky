@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <EditTextPreference
+        android:key="sensitivity"
+        android:summary="@string/pref_sensitivity_summary"
+        android:defaultValue="@string/pref_sensitivity_defaultvalue"
+        android:title="@string/pref_sensitivity_title" />
+
+</PreferenceScreen>
