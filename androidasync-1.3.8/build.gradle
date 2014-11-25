@@ -1,2 +1,0 @@
-configurations.create("default")
-artifacts.add("default", file('androidasync-1.3.8.jar'))
