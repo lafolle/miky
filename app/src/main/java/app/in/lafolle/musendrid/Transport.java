@@ -31,20 +31,23 @@ public class Transport {
     }
 
     private Context context;
+
+    // TODO: rem mac address
     private final String BLUETOOTH_SERVER_MAC = "F4:B7:E2:4C:53:9E";
     private BluetoothDevice serverDevice;
     private BluetoothSocket clientBluetoothSocket;
     private Communicate communicate;
     private android.os.Handler hostMessagehandler;
+//    private BluetoothAdapter bluetoothAdapter;
 
     /*
      * Initializes the Bluetooth connection with
      * server by starting an async task.
      */
-    public void InitConn(Context ctx, android.os.Handler handler) {
+    public void InitConn(Context ctx, android.os.Handler handler, BluetoothAdapter bluetoothAdapter) {
         context = ctx;
         hostMessagehandler = handler;
-        new InitiateBluetooth().execute();
+        new InitiateBluetooth().execute(bluetoothAdapter);
     }
 
     public void Reconnect() {
@@ -133,7 +136,6 @@ public class Transport {
 
         }
 
-        // call this from main activity to wrte
         public void write(byte[] bytes) {
             try {
                 String data = new String(bytes);
@@ -154,7 +156,7 @@ public class Transport {
         }
     }
 
-    private class InitiateBluetooth extends AsyncTask<Void, Void, Boolean> {
+    private class InitiateBluetooth extends AsyncTask<BluetoothAdapter, Void, Boolean> {
 
         private final String DEBUG_TAG = InitiateBluetooth.class.getSimpleName();
         private final String ERROR_TAG = InitiateBluetooth.class.getSimpleName();
@@ -184,22 +186,9 @@ public class Transport {
         }
 
         @Override
-        protected Boolean doInBackground(Void... voids) {
+        protected Boolean doInBackground(BluetoothAdapter... btas) {
 
-            BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-            if (bluetoothAdapter == null) {
-                Log.d(DEBUG_TAG, "bluetooth is not supported");
-                return false;
-            }
-
-//            bluetoothAdapter.cancelDiscovery();
-
-            if (!bluetoothAdapter.isEnabled()) {
-                Log.d(DEBUG_TAG, "bluetooth is not enabled");
-                return false;
-            }
-
-            // get all paired devices
+            BluetoothAdapter bluetoothAdapter = btas[0];
             Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
             if (pairedDevices.size() == 0) {
                 Log.d(DEBUG_TAG, "no paired devices found");

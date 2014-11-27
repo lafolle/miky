@@ -1,5 +1,6 @@
 package app.in.lafolle.musendrid;
 
+import android.bluetooth.BluetoothAdapter;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -12,6 +13,7 @@ import android.view.GestureDetector;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
+import android.widget.Toast;
 
 import org.json.JSONObject;
 
@@ -25,10 +27,11 @@ public class MainActivity extends ActionBarActivity {
 
     private Transport transport = null;
     private HostConfig hostconfig;
-
+    private final int REQUEST_ENABLE_BLUETOOTH = 23;
     private GestureDetectorCompat gestureDetectorCompat;
 
     private final String LOG_DEBUG = MainActivity.class.getSimpleName();
+    private final String LOG_DEBUG_ACTIVITY_STATE = MainActivity.class.getSimpleName() + ": activity_state";
 
     class MusendridGestureListener extends GestureDetector.SimpleOnGestureListener {
 
@@ -93,8 +96,10 @@ public class MainActivity extends ActionBarActivity {
 
     @Override
     protected void onDestroy() {
+
+        Log.d(LOG_DEBUG_ACTIVITY_STATE, "onDestroy");
         super.onDestroy();
-        transport.Close();
+        if (transport != null) transport.Close();
     }
 
     public class HostConfig {
@@ -110,7 +115,7 @@ public class MainActivity extends ActionBarActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Log.d(LOG_DEBUG, "created");
+        Log.d(LOG_DEBUG_ACTIVITY_STATE, "onCreate");
 
 
         super.onCreate(savedInstanceState);
@@ -178,7 +183,7 @@ public class MainActivity extends ActionBarActivity {
                  */
                 if (pointerCount == 2) {
 
-                    // all only primary pointer to fire events
+                    // only primary pointer to fire events
                     if (event.getActionIndex() != 0) return true;
                     String mtype = null;
                     int hs = event.getHistorySize();
@@ -235,40 +240,83 @@ public class MainActivity extends ActionBarActivity {
 
     @Override
     protected void onStart() {
-
+        Log.d(LOG_DEBUG_ACTIVITY_STATE, "onStart");
         super.onStart();
     }
 
     @Override
     protected void onRestart() {
+        Log.d(LOG_DEBUG_ACTIVITY_STATE, "onRestart");
         super.onRestart();
     }
 
     @Override
     protected void onStop() {
-        Log.d(LOG_DEBUG, "onStop");
+        Log.d(LOG_DEBUG_ACTIVITY_STATE, "onStop");
         super.onStop();
+    }
+
+    private BluetoothAdapter bluetoothAdapter = null;
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        Log.d(LOG_DEBUG, "bluetooth activity has returned");
+//        if (requestCode == REQUEST_ENABLE_BLUETOOTH) {
+//            if (resultCode == RESULT_OK) {
+//                Log.d(LOG_DEBUG, "onActivityResult has responsded");
+////                bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+//                if (transport == null){
+//                    transport = new Transport();
+//                }
+//                transport.InitConn(getApplicationContext(),
+//                        hostMessageHandler,
+//                        bluetoothAdapter);
+//            }
+//
+//        }
+
+        if (resultCode == RESULT_CANCELED) {
+            Log.d(LOG_DEBUG, "Bluetooth was not initialized");
+            // TODO: Kill the app?
+            finish();
+        }
+
+        super.onActivityResult(requestCode, resultCode, data);
     }
 
     @Override
     protected void onResume() {
-        Log.d(LOG_DEBUG, "onResume");
+        Log.d(LOG_DEBUG_ACTIVITY_STATE, "onResume");
 
-        if (transport == null) {
-            transport = new Transport();
+        // get Bluetooth Adapter
+        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+
+        if (!bluetoothAdapter.isEnabled()) {
+            Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(intent, REQUEST_ENABLE_BLUETOOTH);
+        } else {
+            Toast.makeText(getApplicationContext(), "Creating transport", Toast.LENGTH_SHORT).show();
+
+            if (transport == null) {
+                transport = new Transport();
+            }
+            transport.InitConn(getApplicationContext(),
+                    hostMessageHandler,
+                    bluetoothAdapter);
         }
-        transport.InitConn(getApplicationContext(),
-                hostMessageHandler);
 
         super.onResume();
     }
 
     @Override
     protected void onPause() {
+
+        Log.d(LOG_DEBUG_ACTIVITY_STATE, "onPause");
+
         super.onPause();
 
         // close the transport
-        transport.Close();
+        if (transport != null) transport.Close();
     }
 
     @Override
@@ -292,7 +340,8 @@ public class MainActivity extends ActionBarActivity {
             } else {
                 transport = new Transport();
                 transport.InitConn(getApplicationContext(),
-                        hostMessageHandler);
+                        hostMessageHandler,
+                        bluetoothAdapter);
             }
         }
         return super.onOptionsItemSelected(item);
