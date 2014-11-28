@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">Musendrid</string>
+    <string name="app_name">Miky</string>
     <string name="title_activity_settings">Settings</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
@@ -10,5 +10,7 @@
     <string name="pref_sensitivity_summary">Scale distance</string>
     <string name="pref_sensitivity_defaultvalue">0.8</string>
     <string name="pref_sensitivity_title">Mouse Sensitivity</string>
+
+    <color name="background_color">#367588</color>
 
 </resources>

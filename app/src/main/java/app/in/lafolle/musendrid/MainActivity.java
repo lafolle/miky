@@ -13,6 +13,7 @@ import android.view.GestureDetector;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
+import android.view.VelocityTracker;
 import android.widget.Toast;
 
 import org.json.JSONObject;
@@ -24,11 +25,18 @@ public class MainActivity extends ActionBarActivity {
 
     private final String DEBUG_TAG = MainActivity.class.getSimpleName();
 
+    private int screen_width, screen_height;
 
     private Transport transport = null;
     private HostConfig hostconfig;
     private final int REQUEST_ENABLE_BLUETOOTH = 23;
     private GestureDetectorCompat gestureDetectorCompat;
+
+    private VelocityTracker velocityTracker = null;
+    private int move_prev_x;
+    private int move_prev_y;
+    private int X_MOVE_THRESHOLD = 2;
+    private int Y_MOVE_THRESHOLD = 2;
 
     private final String LOG_DEBUG = MainActivity.class.getSimpleName();
     private final String LOG_DEBUG_ACTIVITY_STATE = MainActivity.class.getSimpleName() + ": activity_state";
@@ -117,10 +125,14 @@ public class MainActivity extends ActionBarActivity {
     protected void onCreate(Bundle savedInstanceState) {
         Log.d(LOG_DEBUG_ACTIVITY_STATE, "onCreate");
 
-
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+//        setContentView(R.layout.activity_main);
 
+        screen_width = getWindowManager().getDefaultDisplay().getWidth();
+        screen_height = getWindowManager().getDefaultDisplay().getHeight();
+        setContentView(new TouchPad(this, screen_width, screen_height));
+
+        // hide action bar initially
         getSupportActionBar().hide();
         gestureDetectorCompat = new GestureDetectorCompat(this, new MusendridGestureListener());
     }
@@ -144,9 +156,13 @@ public class MainActivity extends ActionBarActivity {
 
         switch (action) {
             case (MotionEvent.ACTION_DOWN): // primary pointer moves down
-                Log.d(DEBUG_TAG, "Action was DOWN " + Integer.toString(pointerCount));
+                Log.d(DEBUG_TAG, "Action was DOWN ");
                 x = (int) event.getX(pointerCount - 1);
                 y = (int) event.getY(pointerCount - 1);
+
+                // prev position as x,y
+                move_prev_x = x;
+                move_prev_y = y;
 
                 Map map;
                 map = new HashMap<String, String>();
@@ -160,20 +176,42 @@ public class MainActivity extends ActionBarActivity {
                 return true;
             case (MotionEvent.ACTION_POINTER_UP): // secondry pointer moves up
                 Log.d(DEBUG_TAG, "pointer up: " + Integer.toString(pointerCount));
+
+                // reset prev position
+                move_prev_x = -1;
+                move_prev_y = -1;
                 return true;
             case (MotionEvent.ACTION_MOVE):
-                if (pointerCount == 1) {
-                    int hs = event.getHistorySize();
 
+                /*
+                 * 
+                 */
+                if (pointerCount == 1) {
+                    Log.d("POINTER MOVE", "pointer move");
+                    Map mmap = new HashMap();
                     x = (int) event.getX(0);
                     y = (int) event.getY(0);
 
-                    Map mmap = new HashMap();
+                    /*
+                     * Dont move the pointer if new points
+                     * dont cross the threshold
+                     */
+                    if (move_prev_x != -1 &&
+                            move_prev_y != -1 &&
+                            (Math.abs(move_prev_x - x) <= X_MOVE_THRESHOLD &&
+                                    Math.abs(move_prev_y - y) <= Y_MOVE_THRESHOLD)) {
+                        Log.d("POINTER MOVE", "not moving");
+                        return true;
+                    }
+
+                    move_prev_x = x;
+                    move_prev_y = y;
+
                     mmap.put("mtype", "1P_M");
                     mmap.put("coord_x", x);
                     mmap.put("coord_y", y);
+
                     transport.Write(new JSONObject(mmap).toString().getBytes());
-//                    Log.d(LOG_DEBUG, new JSONObject(mmap).toString());
                 }
 
                 /*
