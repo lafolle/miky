@@ -1,3 +1,3 @@
 
-Android app to make your touchscreen a touchpad
+Android app to make your smart phone's touchpad a mousepad
 ===============================================
